@@ -5,6 +5,25 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+int read_write(int fd_in, int fd_out,int N_BUF, void* buf, int argc, char** argv){		//read & write function
+	int r = read(fd_in, buf, N_BUF);
+	while (r){
+		if (r < 0){
+			fprintf(stderr, "Can not read file %s: %s\n", argv[optind], strerror(errno));
+			exit(-1);
+		}
+		int	w = write(fd_out,buf, r);
+		if (w < 0){
+			fprintf(stderr, "Error occurred writing to file %s: %s\n", fd_out, strerror(errno));
+		}
+		if (w != r){
+			r -= w;
+			write(fd_out, buf + w, r);// try writing again
+		}
+		r = read(fd_in, buf, N_BUF);
+	}
+}
+
 int main(int argc, char** argv){
 	int fd_in = STDIN_FILENO;		/* standard in */
 	int fd_out = STDOUT_FILENO;		/* standard out */
@@ -39,25 +58,6 @@ int main(int argc, char** argv){
 	}
 	char* buf = malloc(sizeof(char) * N_BUF);
 
-	int read_write(int fd_in, int fd_out,int N_BUF ){		//read & write function
-		int r = read(fd_in, buf, N_BUF);
-		while (r){
-			if (r < 0){
-				fprintf(stderr, "Can not read file %s: %s\n", argv[optind], strerror(errno));
-				exit(-1);
-			}
-			int	w = write(fd_out,buf, r);
-			if (w < 0){
-				fprintf(stderr, "Error occurred writing to file %s: %s\n", fd_out, strerror(errno));
-			}
-			if (w != r){
-				r -= w;
-				write(fd_out, buf + w, r);// try writing again
-			}
-			r = read(fd_in, buf, N_BUF);
-		}
-	}
-
 	int forflag = 0;			// flag to determine whether or not the for loop was executed	
 	for (; optind < argc; ++optind){
 		forflag = 1;	
@@ -75,10 +75,10 @@ int main(int argc, char** argv){
 			}
 		}	
 		//read and write
-		read_write(fd_in, fd_out, N_BUF);		// call read_write function	
+		read_write(fd_in, fd_out, N_BUF, buf, argc, argv);		// call read_write function	
 	}
 	if ( forflag == 0 ) {						// if for loop isn't run, aka no infiles, read through standard input
 		fd_in = STDIN_FILENO;
-		read_write(fd_in, fd_out, N_BUF);
+		read_write(fd_in, fd_out, N_BUF, buf, argc, argv);
 	}
 }
