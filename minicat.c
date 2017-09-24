@@ -15,10 +15,15 @@ int read_write(int fd_in, int fd_out,int N_BUF, void* buf, int argc, char** argv
 		int	w = write(fd_out,buf, r);
 		if (w < 0){
 			fprintf(stderr, "Error occurred writing to file %s: %s\n", fd_out, strerror(errno));
+			exit(-1);
 		}
 		if (w != r){
 			r -= w;
-			write(fd_out, buf + w, r);// try writing again
+			w = write(fd_out, buf + w, r);// try writing again
+			if (w < 0){
+				fprintf(stderr, "Error occurred writing to file %s: %s\n", fd_out, strerror(errno));
+				exit(-1);
+			}
 		}
 		r = read(fd_in, buf, N_BUF);
 	}
@@ -79,6 +84,6 @@ int main(int argc, char** argv){
 	}
 	if ( forflag == 0 ) {						// if for loop isn't run, aka no infiles, read through standard input
 		fd_in = STDIN_FILENO;
-		read_write(fd_in, fd_out, N_BUF, buf, argc, argv);
+ 		read_write(fd_in, fd_out, N_BUF, buf, argc, argv);
 	}
 }
