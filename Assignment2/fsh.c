@@ -10,6 +10,48 @@
 
 #define N_BUF 4096
 
+int refilecheck()
+{
+	int mem = memcmp( *og_buf, *test_buf, N_BUF);
+	while (!mem)
+	{
+		// shift the both buff sizes over and do another compare	
+		int s = read(de.d_name, test_buf, N_BUF);
+		int j = read((og_path, og_buf, N_BUF);
+		if (s < 0)
+		{	
+			fprintf(stderr,"Error reading file %s: %s\n",de.de_name, streerror(errno));
+			exit(-1);
+		}
+		if (j < 0)
+		{	
+		fprintf(stderr,"Error reading file %s: %s\n",og_path, streerror(errno));
+			exit(-1);
+		}
+		if !(s == j)
+		{
+			//files are different, dont care about the files
+			// set diff true
+		return(0);
+		}	
+		if ( s==0 && j ==0)
+		{
+			// we have gotten to the end of both files
+			// and mem still is showing that the files are the same
+			// set diff boolean FALSE
+			return (1);
+		}
+		mem = memcmp( *og_buf, *test_buf, N_BUF);
+	}
+	if (mem)
+	{	
+		//the files are different 
+		//set diff TRUE
+		return(0);
+	}
+}	
+
+
 
 int file_traverse( char filename, char pathname)
 {
@@ -24,26 +66,60 @@ int file_traverse( char filename, char pathname)
 	//so now i opened the dir, must read the directory
 	while ( de = readdir(dirp))
 	{
-		int m = stat(de.d_name, testStat);
+		char testPath[2048];
+		strcpy(testPath, pathname);
+		strcpy(testPath, "/");
+		strcpy(testPath, de.d_name);
+
+		int m = stat(testPath, testStat);
 		if (m < 0)
 		{
 			printf(stderr, "Error occurred accessing file information for %s: %s", de.d_name, strerror(errno));
 			exit(-1);
 		}
-		test_size =testStat.st_size;
-		if (testStat.st_size == fileStat.st_size)
-		{	
-		// the file sizes are the same, look into the file and see if the contents are the same
-		char* test_buf = malloc(sizeof(char) * N_BUF);
-		int s = read(de.d_name, test_buf, N_BUF);
-		if (s<0)
+		if (testStat.st_mode == S_IFREG || S_IFLNK) // only check for regular files and symlinks
 		{
-			fprintf(stderr," Error occurred reading file %s: %s", de.d_name, strerror(errno));
-			exit(-1);
-		}
-		while (s)
+			if (testStat.st_size == fileStat.st_size)
+			{	
+			// the file sizes are the same, look into the file and see if the contents are the same
+			char* test_buf = malloc(sizeof(char) * N_BUF);
+			int s = read(de.d_name, test_buf, N_BUF);
+			if (s<0)
 			{
-			
+				fprintf(stderr," Error occurred reading file %s: %s", de.d_name, strerror(errno));
+				exit(-1);
+			}
+	/////
+/////////////////////////
+			int recheck = refilecheck(); //TODO missing parameters;
+			if (recheck)
+			{
+				// check if it is a hard link or a duplicate of target or symlink
+				if (testStat.st_nlink == 2);
+					{		//FILE IS A DUPLICATE OF TARGET (NLINK) == 2
+				
+					}
+				else if ( testStat.st_mode == S_IFLINK){
+					{
+						//file is a SYMLINK
+						//check if it is a symlink of original file or a simlynk to a hard link or something else
+					}
+				else
+					{
+						//file is a hard link of target
+					}
+
+
+	while (s) // now compare the contents of both files buffer by buffer to see if there's any difference in data
+			{
+				int mem = memcmp( *og_buf, *test_buf, N_BUF);
+				if (mem)
+				{
+					// there is a difference in the initial 4096 bytes
+					return;
+				}
+				// check the rest of the file contents to see if the same
+					
 		
 }
 
@@ -85,7 +161,14 @@ int main(int argc, char** argv)
 	}
 	//load contents into a buffer
 	char* og_buf = malloc(sizeof(char) * N_BUF);
-	int r = read( filename, og_buf, N_BUF); // first 4096 read into og_buffer		
+
+	// create the path string 
+	char og_path[2048];
+	strcpy(og_path, pathname);
+	strcpy(og_path, "/");
+	strcpy(og_path, filename);
+
+	int r = read(og_path, og_buf, N_BUF); // first 4096 read into og_buffer		
 
 	// stor information about the key file
 	
