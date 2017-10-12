@@ -22,9 +22,10 @@ void printpermissions(int permissioncheck)
 	}	
 }
 
-/*
+
 int refilecheck(char* filename, char* pathname, char* testPath, struct stat fileStat, struct stat testStat, DIR *OD, DIR *ND, int ffile_fd)
 {
+	printf("made it to refile check\n");
 	int mem,i,j, k;
 	//create some buffers for reading files into
 	char* test_buf = malloc(sizeof(char) * N_BUF);
@@ -71,13 +72,15 @@ int refilecheck(char* filename, char* pathname, char* testPath, struct stat file
 	}
 	close(j);
 }
-*/
-int file_traverse(char* filename, char* pathname, char* og_Path,int permissioncheck)
+
+
+
+void file_traverse(char* filename, char* pathname, char* og_Path,int permissioncheck)
 {
 	struct stat fileStat,testStat, dirStat;
 	struct dirent *de;
-	DIR *ND, *OD;//newdir and olddir
-	int i,j, rfchk;
+	DIR *OD, *ND;//newdir and olddir
+	int fd,i,j, rfchk;
 	char testPath [2048] = {0};
 	char* in_sym = malloc(sizeof(char) *N_BUF);
 
@@ -91,7 +94,6 @@ int file_traverse(char* filename, char* pathname, char* og_Path,int permissionch
 	if (i < 0)
 	{
 		fprintf(stderr,"Error occurred accessing file information for %s: %s", filename, strerror(errno));
-		exit(-1);
 	}
 	
 	OD = opendir(pathname);	
@@ -99,67 +101,66 @@ int file_traverse(char* filename, char* pathname, char* og_Path,int permissionch
 	{
 		fprintf(stderr, "Error occurred opening initial directory %s: %s", pathname, strerror(errno));
 	}
+
+	permissioncheck = ( stat(pathname, &dirStat) >= 0 && dirStat.st_mode & S_IROTH) ? 1 : 0; //trying a ternary
 	
-
-	if ( stat(pathname, &dirStat) >= 0 && dirStat.st_mode & S_IROTH)
-	{
-		permissioncheck = 1;
-	}
-	else 
-	{
-		permissioncheck = 0;
-	}
-
-	while (de = readdir(ND))
+	while (de = readdir(OD))
 	{	
+		if( strcmp(de->d_name, "..") == 0 || strcmp(de->d_name, ".") == 0) 
+		{
+			continue;
+		}
 		//create the new directory string
 		strcpy(testPath, pathname);
 		strcat(testPath, "/");
 		strcat(testPath, de->d_name);
-		
+
+		j = stat(testPath, &testStat);
+
 		if (S_ISDIR(testStat.st_mode)) // is a directory 
 		{
+			printf("looking into S_ISDIR\n");
 			ND = opendir(testPath);
 			if (ND == NULL)
 			{
 				fprintf(stderr,"Error opening directory %s: %s", testPath, strerror(errno));
-				return(-1);
 			} 
-			file_traverse(filename, pathname, fileStat, OD, ffile_fd, og_Path, permissioncheck);
+			file_traverse(filename, testPath, og_Path, permissioncheck);
 			i = closedir(ND);
 			if (i<0)
 			{
 				fprintf(stderr,"Error closing directory %s: %s", testPath, strerror(errno));
 			}
+			continue;
 		}
 		else if (S_ISREG(testStat.st_mode)) // is a normal file
 		{
-			j = stat(testPath, &testStat);
+			printf("looking into S_ISREG\n");
 			if (j < 0)
 			{
 				fprintf(stderr,"Error occurred accessing file information for %s: %s", filename, strerror(errno));
 				printpermissions(permissioncheck);
 				exit(-1);
-			}
+			}	
 			if (testStat.st_size == fileStat.st_size) // either hard link or duplicate
 			{
-				rfchk = refilecheck(filename, pathname, testPath, testStat, fileStat, OD, ND, ffile_fd);  //run recheck function
+				rfchk = refilecheck(filename, pathname, testPath, testStat, fileStat, OD, ND, fd);  //run recheck function
 				if 	(rfchk == 2 && testStat.st_dev == fileStat.st_dev && fileStat.st_ino == testStat.st_ino) 
 				{
 					printf("%s\tHard Link to target\t", testPath);
 					printpermissions(permissioncheck);
-					break;
 				}
 				else if (rfchk ==2)
 				{
 					printf("%s\t Duplicate of Target (Nlink = %n)",testPath, testStat.st_nlink);
 					printpermissions(permissioncheck);
-					break;
 				}
 			}
+			continue;
 		}
 		else if (S_ISLNK(testStat.st_mode)) // is a symlink 
 		{
+			printf("looking into S_ISLNK");
 			int op = open(testPath, O_RDONLY);
 			int rd = read(op, in_sym, N_BUF);	
 		
@@ -167,14 +168,13 @@ int file_traverse(char* filename, char* pathname, char* og_Path,int permissionch
 			{	
 				printf("%s\tSymlink resolves to target\t", pathname);
 				printpermissions(permissioncheck);
-				break;
 			}
 			else
 			{
 				printf("%s\tSymlink resolves to copy of target\t (nlink = %n)\t", pathname, testStat.st_nlink); printpermissions(permissioncheck);
-				break;
 			}
 		}
+		continue;
 	}// close while loop todo free some stuff	, return 0?
 }			
 
@@ -190,35 +190,12 @@ int main(int argc, char** argv)
 		printf("Invalid number of arguments: You entered %d argument(s) instead of 2\n",argc-1);
 		exit(-1);
 	}
-/*	
-	fd = open(argv[1], O_RDONLY);
-	if (fd < 0)
-	{
-		fprintf(stderr, "Error opening Initial file %s: %s", argv[1], strerror(errno));
-	}
 	
-	i = stat(argv[1], &fileStat);
-	if (i < 0)
-	{
-		fprintf(stderr,"Error occurred accessing file information for %s: %s", argv[1], strerror(errno));
-		exit(-1);
-	}
-	
-	OD = opendir(argv[2]);	
-	if ( OD == NULL)
-	{
-		fprintf(stderr, "Error occurred opening initial directory %s: %s", argv[2], strerror(errno));
-	}
-*/
 	strcpy(og_Path, argv[2]);
 	strcat(og_Path, "/");
 	strcat(og_Path, argv[1]);
 	
-	j = file_traverse(argv[1], argv[2], og_Path, 1);
-	if (j <0)
-	{
-		fprintf(stderr,"Error occurred reading initial file %s: %s", argv[1], strerror(errno));
-	}
+	file_traverse(argv[1], argv[2], og_Path, 1);
 //	close (fd);
 //	closedir(OD);
 //	printf("%s\n", og_Path);
