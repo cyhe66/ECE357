@@ -22,21 +22,17 @@ void printpermissions(int permissioncheck)
 	}	
 }
 
-
 int refilecheck(char* filename, char* pathname, char* testPath, struct stat fileStat, struct stat testStat, DIR *OD, DIR *ND, int ffile_fd)
 {
-	printf("made it to refile check\n");
-	int mem,i,j, k;
+	int mem = 0,i,j, k;
 	//create some buffers for reading files into
 	char* test_buf = malloc(sizeof(char) * N_BUF);
 	char* og_buf = malloc(sizeof(char) * N_BUF);
 	
-
 	i = open(testPath, O_RDONLY);
 	if (i<0)
 	{
 		fprintf(stderr,"Error opening file %s: %s",testPath, strerror(errno));
-		return (-1);
 	}
 
 	// exit conditions
@@ -48,8 +44,8 @@ int refilecheck(char* filename, char* pathname, char* testPath, struct stat file
 		{	//mem must still be 0 for this to execute	
 			break;
 		}
-		j = read(i,test_buf, N_BUF);// read testPath file into the test_buf
-		k = read(ffile_fd,og_buf, N_BUF);// read argv[1] into og_buf
+		j = read(i,test_buf, N_BUF);
+		k = read(ffile_fd,og_buf, N_BUF);
 		if (j < 0)
 		{
 			fprintf(stderr,"Error reading file %s: %s", testPath, strerror(errno));
@@ -64,7 +60,7 @@ int refilecheck(char* filename, char* pathname, char* testPath, struct stat file
 	}
 	if (!mem)
 	{
-		return 2;//the files' contents are the same
+		return 2;
 	}	
 	else
 	{// mem != 0, and the files are not the same. move onto the next file
@@ -72,8 +68,6 @@ int refilecheck(char* filename, char* pathname, char* testPath, struct stat file
 	}
 	close(j);
 }
-
-
 
 void file_traverse(char* filename, char* pathname, char* og_Path,int permissioncheck)
 {
@@ -89,7 +83,7 @@ void file_traverse(char* filename, char* pathname, char* og_Path,int permissionc
 	{
 		fprintf(stderr, "Error opening Initial file %s: %s", filename, strerror(errno));
 	}
-	
+
 	i = stat(filename, &fileStat);
 	if (i < 0)
 	{
@@ -110,8 +104,7 @@ void file_traverse(char* filename, char* pathname, char* og_Path,int permissionc
 		{
 			continue;
 		}
-		//create the new directory string
-		strcpy(testPath, pathname);
+		strcpy(testPath, pathname);//create the new directory string
 		strcat(testPath, "/");
 		strcat(testPath, de->d_name);
 
@@ -135,7 +128,7 @@ void file_traverse(char* filename, char* pathname, char* og_Path,int permissionc
 		}
 		else if (S_ISREG(testStat.st_mode)) // is a normal file
 		{
-			printf("looking into S_ISREG\n");
+			printf("looking into S_ISREG: %s\n", de->d_name);
 			if (j < 0)
 			{
 				fprintf(stderr,"Error occurred accessing file information for %s: %s", filename, strerror(errno));
@@ -145,6 +138,7 @@ void file_traverse(char* filename, char* pathname, char* og_Path,int permissionc
 			if (testStat.st_size == fileStat.st_size) // either hard link or duplicate
 			{
 				rfchk = refilecheck(filename, pathname, testPath, testStat, fileStat, OD, ND, fd);  //run recheck function
+				printf("%d", rfchk);
 				if 	(rfchk == 2 && testStat.st_dev == fileStat.st_dev && fileStat.st_ino == testStat.st_ino) 
 				{
 					printf("%s\tHard Link to target\t", testPath);
@@ -160,7 +154,7 @@ void file_traverse(char* filename, char* pathname, char* og_Path,int permissionc
 		}
 		else if (S_ISLNK(testStat.st_mode)) // is a symlink 
 		{
-			printf("looking into S_ISLNK");
+			printf("looking into S_ISLNK: %s", de->d_name);
 			int op = open(testPath, O_RDONLY);
 			int rd = read(op, in_sym, N_BUF);	
 		
@@ -175,7 +169,7 @@ void file_traverse(char* filename, char* pathname, char* og_Path,int permissionc
 			}
 		}
 		continue;
-	}// close while loop todo free some stuff	, return 0?
+	}
 }			
 
 int main(int argc, char** argv)
@@ -190,14 +184,10 @@ int main(int argc, char** argv)
 		printf("Invalid number of arguments: You entered %d argument(s) instead of 2\n",argc-1);
 		exit(-1);
 	}
-	
 	strcpy(og_Path, argv[2]);
 	strcat(og_Path, "/");
 	strcat(og_Path, argv[1]);
 	
 	file_traverse(argv[1], argv[2], og_Path, 1);
-//	close (fd);
-//	closedir(OD);
-//	printf("%s\n", og_Path);
 	return(0);
 }
