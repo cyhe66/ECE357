@@ -51,12 +51,11 @@ int dothething(char* command_line){
 	temp = strtok( command_line, " ");
 	
 	while (temp != NULL){
-		//parse the line and see if there's ls, pwd, or redirection, and set flags to denote that
 		if (strstr(temp, "2>>") == temp)		fn_reErrA = temp + 3;	//remove the "2>>" from the filename string	
 		else if (strstr(temp, ">>") == temp)	fn_reOutA = temp + 2;
 		else if (strstr(temp, "2>") == temp)	fn_reErrT = temp + 2;	
 		else if (strstr(temp, ">") == temp)		fn_reOutT = temp + 1;
-		else if (strstr(temp, "<") == temp)		fn_reIn = temp + 1;	
+		else if (strstr(temp, "<") == temp){		fn_reIn = temp + 1;	 printf("The thing is : %s\n", fn_reIn);}
 		else{
 			commands[i] = temp; //feeds the rest of the str into commands
 			commands[i+1] = NULL;
@@ -67,7 +66,7 @@ int dothething(char* command_line){
 		}
 		temp = strtok(NULL, " ");
 	}
-
+//HARD CODED IDENTIFIERS
 	if (!strcmp(commands[0], "cd")){		//implement change directory
 		if (i == 1){						//cd by itself
 			j = chdir(getenv("HOME"));
@@ -143,8 +142,6 @@ void prompt(){
 	if(!getcwd(cwd,1024)) fprintf(stderr,"Error getting surrent directory: %s\n", strerror(errno));
 	printf(RED "[%s]$ " RESET, cwd);
 }
-
-
 
 int main(int argc, char** argv){
 	FILE *fp_in;

@@ -1,4 +1,4 @@
-#!/home/casey/projects/YearThree/ece357/Assignment3/a.out
+#!/home/casey/projects/YearThree/ece357/Assignment3/HESHELL
 #this is a comment
 cat >cat.out
 #and this is also a comment
