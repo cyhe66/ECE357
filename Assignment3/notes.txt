@@ -1,0 +1,39 @@
+the Shell
+create a shell that is able to launch one program at a time, with arguments, waiting for and reporting the exit status 
+
+shell should :
+		fork to create a new process ( which will run the command)
+		set up any i/o redirection
+		exec the program
+		wait for and report the exit status
+		report the real/user/system tim econsumed by then command (wait3)
+	
+we can parse stdin with "strtok"
+
+command argument > output (redirection)
+
+# is a comment line and is ignored
+
+
+BUILT in COMMANDS:
+
+built in "cd" - using the chdir systemcall
+
+optionally insert a "pwd" built in command
+
+"exit" command- which takes in a single argument (exit tbe shell)
+
+---no need for i/o redirection for built-in commands
+
+
+I/O redirection:
+	
+< filename : open filename and redirect stdin to the file
+
+> filename : open/create/truncate filename and redirect stdout
+
+2> filename: open/create/truncate filename and redirect stderr
+
+>> filename: open/create/append filename and redirect stdout
+
+2>> filename: open/create/append filename and redirecet stderr
