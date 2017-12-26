@@ -4,7 +4,6 @@
 #include<stdio.h>
 #include<unistd.h>
 #include<sys/types.h>
-
 #include "tas64.S"
 
 struct account {
@@ -15,9 +14,11 @@ struct account {
 	//int access_count;//incremented access count
 };
 
+
 int tas64(volatile char*);
-void spin_lock(struct account);
-void spin_unlock(struct account);
+
+void spin_lock(struct account *l);
+void spin_unlock(struct account *l);
 
 
 

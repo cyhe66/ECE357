@@ -73,9 +73,11 @@ int main(int argc, char* argv[]){
 	}
 	
 	pid_t pid = 0;
+	/*
+	 * instantiate the account struct
+	 */
 
-	struct account *l;			// int lock, int target_num, pid_t current holder, int access_count
-	/* struct specification */
+	account *l;			// int lock, int target_num, pid_t current holder, int access_count
 	l-> lock = 0;
 	l-> target_num = 0;
 
@@ -88,12 +90,12 @@ int main(int argc, char* argv[]){
 
 			case 0: // in child
 				while(iter_no){
-					spin_lock(l);
+					spin_lock(*l);
 					//add a delay
 					for (int ii = 0; ii < 10; ii++){
 						;
 					}	
-					spin_unlock(l);
+					spin_unlock(*l);
 				}
 				exit(0);
 

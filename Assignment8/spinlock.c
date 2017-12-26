@@ -1,8 +1,8 @@
 #include <spinlock.h>
 #include <sched.h>
 #include <string.h>
+
 //tas works as follows-- 
-//zero value mean unlocked and tas returns the "previous" vlaue of *lock
 //returns 0 when the lock has been acquired
 //returns 1 when the lock hsa not been acquired
 //
