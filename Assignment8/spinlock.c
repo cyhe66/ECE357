@@ -1,4 +1,4 @@
-#include <spinlock.h>
+#include "spinlock.h"
 #include <sched.h>
 #include <string.h>
 
@@ -8,15 +8,11 @@
 //
 
 void spin_lock(struct account *l){
-	int temp;
-	while (temp = (tas64(&l->lock)!= 0)){
-		//int sched_yield();
+	while ((tas(&(l->lock)))!= 0){
 		;
 	}
 	//when we get here, we are the only task that could be accessing
 	l->target_num += 1;
-	//l->access_count += 1;
-	//l->current_holder = getpid();
 }
 
 void spin_unlock(struct account *l){

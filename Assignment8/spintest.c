@@ -1,4 +1,4 @@
-#include <spinlock.h>
+#include "spinlock.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -12,22 +12,12 @@
 #include <fcntl.h> //O_RDWR , O_CREAT, O_TRUNC
 
 
-//open
-//write
-//mmap
-//fork 
-//spinlock
-//
-//
-// ./spintest {spawn_no} {iter_no}
-//
-
 int main(int argc, char* argv[]){
 	int spawn_no, iter_no;
 	int fd;
 	char buf[13] = "Hello World!\n";
 	struct stat sb;
-	int addr;
+	char* addr;
 	/* 
 	 *Accept command line arguments for # of spawn and # of iterations
 	*/	 
@@ -67,7 +57,7 @@ int main(int argc, char* argv[]){
 	
 	size_t textlength = sb.st_size + 1;
 	
-	if (addr = mmap(NULL, textlength, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, fd, 0) < 0){
+	if ((void*)(addr = mmap(NULL, textlength, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, fd, 0)) < 0){
 		fprintf(stderr,"Failure to mmap: %s\n", strerror(errno));
 		exit(1);
 	}
@@ -77,9 +67,10 @@ int main(int argc, char* argv[]){
 	 * instantiate the account struct
 	 */
 
-	account *l;			// int lock, int target_num, pid_t current holder, int access_count
+	struct account *l;			// int lock, int target_num, pid_t current holder, int access_count
+	l = (struct account *) (addr+sizeof(int)*8); //byte
 	l-> lock = 0;
-	l-> target_num = 0;
+	l->target_num = 0;
 
 	while (spawn_no){
 		//does the fork/exec shit
@@ -90,12 +81,12 @@ int main(int argc, char* argv[]){
 
 			case 0: // in child
 				while(iter_no){
-					spin_lock(*l);
+					spin_lock(l);
 					//add a delay
 					for (int ii = 0; ii < 10; ii++){
 						;
 					}	
-					spin_unlock(*l);
+					spin_unlock(l);
 				}
 				exit(0);
 
