@@ -27,7 +27,6 @@ typedef struct cv{
 	int counter;
 	account lock;
 	pid_t pid_list[CV_MAXPROC];
-	sigset_t sigmask;
 }cv;
 
 

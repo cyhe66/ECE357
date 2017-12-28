@@ -1,6 +1,4 @@
-//maintains a FIFO of unsigned londs using a shared memor data structure protected and coordinated with the spinlokc and the condition variable modules developed [previously]. 
-
-
+//maintains a FIFO of unsigned longs using a shared memor data structure protected and coordinated with the spinlokc and the condition variable modules developed [previously]. 
 #include "fifo.h"
 
 
@@ -17,9 +15,9 @@ void fifo_init(struct fifo *f){
 	cv_init(&f->full);
 	cv_init(&f->empty);
 	f->next_write = 0;
-	f->next_read = 0;
+	f->next_read  = 0;
 	f->item_count = 0;
-	f->fifo_mutex_lock.lock = 0;
+	spin_unlock(&f->fifo_mutex_lock);
 	for (int ii = 0; ii < MY_FIFO_BUFSIZ; ii++){
 		f->fifo_buf[ii] = 0;
 	}
