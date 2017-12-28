@@ -6,7 +6,6 @@
 #include <sys/mman.h>
 #include <errno.h>
 #include <sys/wait.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <limits.h>
 #include <fcntl.h> //O_RDWR , O_CREAT, O_TRUNC
@@ -14,10 +13,6 @@
 
 int main(int argc, char* argv[]){
 	int spawn_no, iter_no;
-	int fd;
-	char buf[13] = "Hello World!\n";
-	struct stat sb;
-	char* addr;
 	/* 
 	 *Accept command line arguments for # of spawn and # of iterations
 	*/	 
@@ -32,79 +27,45 @@ int main(int argc, char* argv[]){
 		fprintf(stderr,"Invalid arguments.\n");
 		exit(1);
 	}
-	/*
-	 * Write phrase 'Hello World!\n' to the new file './spintest'
-	 */
-
-	if (fd = open("./spintest.txt",	O_RDWR|O_CREAT|O_TRUNC, 0666) < 0){
-		fprintf(stderr, "Error opening file %s: %s\n", "./spintest.txt", strerror(errno));
-		exit(1);
-	}
 	
-	if (write(fd, buf, sizeof(char) * 13) < 0){
-		fprintf(stderr, "Error writing to file %s: %s\n", "./spintest.txt", strerror(errno));
-		exit(1);
-	}	
-	/*
-	 * Get the size of the written file to feed into mmap
-	 * create a shared memory region
-	 */
+	int* addr = mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, 0, 0 );
 	
-	if (fstat(fd, &sb) < 0){
-		fprintf(stderr, "Error occurred on fstat for file %s: %s", "./spintest.txt", strerror(errno));
-		exit(1);
-	}
-	
-	size_t textlength = sb.st_size + 1;
-	
-	if ((void*)(addr = mmap(NULL, textlength, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, fd, 0)) < 0){
+	if (addr == MAP_FAILED){
 		fprintf(stderr,"Failure to mmap: %s\n", strerror(errno));
 		exit(1);
 	}
 	
 	pid_t pid = 0;
-	/*
-	 * instantiate the account struct
-	 */
 
-	struct account *l;			// int lock, int target_num, pid_t current holder, int access_count
-	l = (struct account *) (addr+sizeof(int)*8); //byte
+	account *l;			
+	l = (account *) (addr+ sizeof(account)); 
 	l-> lock = 0;
 	l->target_num = 0;
 
-	while (spawn_no){
-		//does the fork/exec shit
+	for (int ii = 0 ; ii < spawn_no; ii++){
 		switch(pid = fork()){
 			case -1: 
 				fprintf(stderr,"Error forking process: \n", strerror(errno));
 				exit(1);
 
 			case 0: // in child
-				while(iter_no){
-					spin_lock(l);
-					//add a delay
-					for (int ii = 0; ii < 10; ii++){
-						;
-					}	
-					spin_unlock(l);
-				}
+				spin_lock(l);
+
+				for (int ii = 0; ii < iter_no; ii++)
+					l->target_num+=1;
+
+				spin_unlock(l);
+
 				exit(0);
 
 			default:// in parent
-				fprintf(stderr,"Forking Child Process %d\n", spawn_no);
-		}
-		spawn_no--;
-	}
-
-/*
-	int wstatus = 0;
-	while ((pid = wait(&wstatus)) >0){
-		fprintf(stderr, "Exit %d\n", (int) pid);
-		if (WIFSIGNALED(wstatus)){
-			fprintf(stderr,"Killed by signal: %d\n", WTERMSIG(wstatus));
+				fprintf(stderr,"Forking Child Process %d\n", ii);
 		}
 	}
-	
-*/
+	//wait for all the child processes
+	for (int ii  = 0; ii < spawn_no; ii++){
+		wait(0);
+	}
+	fprintf(stderr,"Final result: %d\n", l->target_num);
 
 }
